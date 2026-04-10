@@ -310,6 +310,14 @@ func newTopologyRuntime(
 		// No NotifyNodeDirty here — AddNodeFromSub already notifies all platforms.
 		probeMgr.TriggerImmediateEgressProbe(hash)
 	})
+	pool.SetOnNodeUpdated(func(hash node.Hash) {
+		if onNodeRemoved != nil {
+			onNodeRemoved(hash)
+		}
+		outboundMgr.EnsureNodeOutbound(hash)
+		probeMgr.TriggerImmediateEgressProbe(hash)
+		probeMgr.TriggerImmediateLatencyProbe(hash)
+	})
 	pool.SetOnNodeRemoved(func(hash node.Hash, entry *node.NodeEntry) {
 		markNodeRemovedDirty(engine, hash, entry)
 		outboundMgr.RemoveNodeOutbound(entry)
@@ -380,6 +388,7 @@ func bootstrapTopology(
 		sub.SetFetchConfig(ms.URL, ms.UpdateIntervalNs)
 		sub.SetSourceType(ms.SourceType)
 		sub.SetContent(ms.Content)
+		sub.SetUpstreamSubscriptionID(ms.UpstreamSubscriptionID)
 		sub.SetEphemeralNodeEvictDelayNs(ms.EphemeralNodeEvictDelayNs)
 		sub.CreatedAtNs = ms.CreatedAtNs
 		sub.UpdatedAtNs = ms.UpdatedAtNs
